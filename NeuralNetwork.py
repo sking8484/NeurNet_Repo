@@ -17,15 +17,15 @@ class NeuralNetwork:
 
         for layer in range(self.layers):
             if layer == 0:
-                self.iw[layer] = np.random.rand(self.hnodes,self.inodes)
+                self.iw[layer] = (np.random.rand(self.hnodes,self.inodes)-.5)
                 self.iw['bias' +str(layer)] = np.random.rand(self.hnodes)
                 self.iw['bias' + str(layer)] = np.array(self.iw['bias' +str(layer)],ndmin = 2).T
             elif layer == self.layers-1:
-                self.iw[layer] = np.random.rand(self.onodes,self.hnodes)
+                self.iw[layer] = (np.random.rand(self.onodes,self.hnodes)-.5)
                 self.iw['bias' +str(layer)] = np.random.rand(self.onodes)
                 self.iw['bias' + str(layer)] = np.array(self.iw['bias' +str(layer)],ndmin = 2).T
             else:
-                self.iw[layer] = np.random.rand(self.hnodes, self.hnodes)
+                self.iw[layer] = (np.random.rand(self.hnodes, self.hnodes)-.5)
                 self.iw['bias'+str(layer)] = np.random.rand(self.hnodes)
                 self.iw['bias' + str(layer)] = np.array(self.iw['bias'+str(layer)],ndmin = 2).T
 
@@ -91,6 +91,7 @@ class NeuralNetwork:
                 first_errors = np.transpose(self.iw[layer+1])@first_errors
                 gradient = self.dsigmoid(self.ff[layer])
                 gradient = np.multiply(first_errors,gradient)
+                first_errors = gradient
                 gradient = self.lr*gradient
 
                 inputs_t = self.input_array.T
@@ -106,6 +107,7 @@ class NeuralNetwork:
                 gradient = self.dsigmoid(self.ff[layer])
 
                 gradient = np.multiply(first_errors,gradient)
+                first_errors = gradient
 
                 gradient = self.lr*gradient
 
