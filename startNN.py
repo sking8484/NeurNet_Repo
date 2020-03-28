@@ -2,6 +2,7 @@ from NeuralNetwork import NeuralNetwork
 import pandas as pd
 import numpy as np
 from PIL import Image
+import matplotlib.pyplot as plt
 
 
 
@@ -57,48 +58,58 @@ trains['testing'] = np.append(trains['testing'],np.zeros(200).reshape(200,1),1)
 
 
 
+def shuffle_data():
+    data = np.append(cake['training'],planes['training'],0)
+    data = np.append(data, trains['training'],0)
+    np.random.shuffle(data)
+    testing_data = np.append(cake['testing'],planes['testing'],0)
+    testing_data = np.append(testing_data,trains['testing'],0)
+    np.random.shuffle(testing_data)
 
-data = np.append(cake['training'],planes['training'],0)
-data = np.append(data, trains['training'],0)
-np.random.shuffle(data)
-testing_data = np.append(cake['testing'],planes['testing'],0)
-testing_data = np.append(testing_data,trains['testing'],0)
-np.random.shuffle(testing_data)
 
 
+    inputs = []
+    normalized_data = []
+    test_data = []
 
-inputs = []
-normalized_data = []
-test_data = []
-
-testing_inputs = []
-for rows in data:
-    norm_row = rows[:784]/255
-    normalized_data.append(norm_row)
-    input_array = [0,0,0]
-    input_array[int(rows[-1])] = 1
-    inputs.append(input_array)
-for rows in testing_data:
-    norm_row = rows[:784]/255
-    test_data.append(norm_row)
-    input_array = [0,0,0]
-    input_array[int(rows[-1])] = 1
-    testing_inputs.append(input_array)
+    testing_inputs = []
+    for rows in data:
+        norm_row = rows[:784]/255
+        normalized_data.append(norm_row)
+        input_array = [0,0,0]
+        input_array[int(rows[-1])] = 1
+        inputs.append(input_array)
+    for rows in testing_data:
+        norm_row = rows[:784]/255
+        test_data.append(norm_row)
+        input_array = [0,0,0]
+        input_array[int(rows[-1])] = 1
+        testing_inputs.append(input_array)
+    return normalized_data,inputs,test_data,testing_inputs
 
 
 
 data_dict = [{'input':[0,0],'output':[0]},
 {'input':[0,1],'output':[1]},
 {'input':[1,0],'output':[1]},
-{'input':[1,1]}
+{'input':[1,1],'output':[0]}
 
 ]
 
-nn = NeuralNetwork(784,50,5,3,.1)
+nn = NeuralNetwork(784,35,3,3,.1)
 
-for epoch in range(50):
+# for epoch in range(10000):
+#     for i in range(len(data_dict)):
+#         nn.train(data_dict[i]['input'],data_dict[i]['output'])
+#
+# print(nn.feed_forward(data_dict[2]['input']))
+
+
+for epoch in range(15):
+    normalized_data,inputs,test_data,testing_inputs = shuffle_data()
     for i in range(len(normalized_data)):
-        nn.train(list(normalized_data[i]),list(inputs[i]))
+        nn.train(list(normalized_data[i]),list(inputs[i]),epoch)
+
 num_correct = 0
 
 
@@ -113,9 +124,10 @@ for test in range(len(test_data)):
 
 
     answer = np.argmax(ti)
-    print(output)
-    print(answer)
+
     if output == answer:
         num_correct+= 1
 
 print(num_correct/len(testing_inputs))
+
+plt.show()
