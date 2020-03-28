@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 
 class NeuralNetwork:
-    def __init__(self, inputnotes,hiddennodes,layers,outputnodes,learningrate):
+    def __init__(self, inputnotes,hiddennodes,layers,outputnodes,learningrate,output_type):
         self.inodes = inputnotes
         self.hnodes = hiddennodes
         self.layers = layers
@@ -13,6 +13,7 @@ class NeuralNetwork:
         self.individual_epoch_errors = []
         self.mean_errors = []
         self.original_epoch=0
+        self.output_type = output_type
 
 
         """Initialize the weights and the biases"""
@@ -96,13 +97,18 @@ class NeuralNetwork:
             elif layer == self.layers -1:
                 self.ff['z'+str(layer)] = self.iw[layer]@self.ff['a'+str(layer-1)]
                 self.ff['z'+str(layer)]+= self.iw['bias'+str(layer)]
-                self.ff['a'+str(layer)] = self.sigmoid(self.ff['z'+str(layer)])
+                if self.output_type.lower().startswith('c'):
+                    self.ff['a'+str(layer)] = self.sigmoid(self.ff['z'+str(layer)])
+                elif self.output_type.lower().startswith('r'):
+                    self.ff['a'+str(layer)] = self.ff['z'+str(layer)]
+
             else:
                 self.ff['z'+str(layer)] = self.iw[layer]@self.ff['a'+str(layer-1)]
                 self.ff['z'+str(layer)]+= self.iw['bias'+str(layer)]
                 self.ff['a'+str(layer)] = self.sigmoid(self.ff['z'+str(layer)])
 
         outputs = self.ff['a'+str(self.layers-1)]
+
         return outputs
 
     def train(self,inputs,targets,epoch):
@@ -113,12 +119,13 @@ class NeuralNetwork:
         outputs = self.feed_forward(inputs)
         targets = np.array(targets,ndmin=2).T
 
+
         output_errors = (targets-outputs)
         self.individual_epoch_errors.append(np.linalg.norm(output_errors))
 
         if self.original_epoch != epoch:
             #print(np.mean(self.individual_epoch_errors))
-            self.mean_errors.append(1-np.mean(self.individual_epoch_errors))
+            self.mean_errors.append(1-np.mean(self.individual_epoch_errors*1))
             self.individual_epoch_errors = []
             self.original_epoch +=1
 
@@ -133,7 +140,16 @@ class NeuralNetwork:
 
             if layer == self.layers -1:
                 #δL=(aL−y)⊙σ′(zL).
-                gradient = self.dsigmoid(self.ff['z'+str(self.layers-1)])
+                """Check to see what the output type is"""
+                if self.output_type.lower().startswith('c'):
+                    """Classification output, using sigmoid run it through the dsigmoid"""
+
+                    gradient = self.dsigmoid(self.ff['z'+str(self.layers-1)])
+                elif self.output_type.lower().startswith('r'):
+                    """regression. The function is linear, therefore has derivative of 1 everywhere"""
+
+                    gradient = np.ones(np.shape(self.ff['z'+str(self.layers-1)]))
+
                 gradient = np.multiply(output_errors,gradient)
                 if np.linalg.norm(gradient)>5:
                     gradient = 5*(gradient/np.linalg.norm(gradient))
@@ -178,10 +194,6 @@ class NeuralNetwork:
                 first_errors = gradient
 
                 gradient = self.lr*gradient
-
-
-
-
                 prev_hidden_t = self.ff['a'+str(layer-1)].T
 
                 deltas = gradient@prev_hidden_t
